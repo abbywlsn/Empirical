@@ -33,9 +33,6 @@ debug-web:	$(PROJECT).js
 
 web-debug:	debug-web
 
-test-web: CFLAGS_web := $(CFLAGS_all) $(OFLAGS_web_debug) $(OFLAGS_web_all) -s WASM=0
-test-web:	$(PROJECT).js
-
 $(PROJECT):	source/native/$(PROJECT).cc
 	$(CXX_nat) $(CFLAGS_nat) source/native/$(PROJECT).cc -o $(PROJECT)
 	@echo To build the web version use: make web
@@ -46,13 +43,10 @@ $(PROJECT).js: source/web/$(PROJECT)-web.cc
 clean:
 	rm -f $(PROJECT) web/$(PROJECT).js web/*.js.map web/*.js.map *~ source/*.o web/*.wasm web/*.wast
 
-test: debug test-web
+test: debug debug-web
 	./project_name | grep -q 'Hello, world!' && echo 'matched!' || exit 1
-	echo "var page = new WebPage(); var fs = require('fs'); page.onLoadFinished = function() { console.log(page.content); phantom.exit(); }; page.open('./project_name.html', function() { page.evaluate(function() { }); });" > temp.js
-	cd web && phantomjs ../temp.js | tr -d '\n' | grep -q "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><title>Project Name</title></head><body><div id=\"emp_base\"><span id=\"emp__0\"><h1>Hello, browser!</h1></span></div><script src=\"jquery-1.11.2.min.js\"></script><script type=\"text/javascript\" src=\"project_name.js\"></script></body></html>" && echo "matched!" || exit 1
-	echo "var page = new WebPage(); var fs = require('fs'); page.onLoadFinished = function() { phantom.exit(); }; page.open('./project_name.html', function() { page.evaluate(function() { }); }); page.onConsoleMessage = function(msg, lineNum, sourceId) { console.log(msg); };" > temp.js
-	cd web && phantomjs ../temp.js | grep -q "Hello, console!" || exit 1
-	rm -f temp.js
+	echo "const puppeteer = require('puppeteer'); var express = require('express'); var app = express(); app.use(express.static('web')); app.listen(3000); express.static.mime.types['wasm'] = 'application/wasm'; function sleep(millis) { return new Promise(resolve => setTimeout(resolve, millis)); } async function run() { const browser = await puppeteer.launch(); const page = await browser.newPage(); await page.goto('http://localhost:3000/project_name.html'); await sleep(1000); const html = await page.content(); console.log(html); browser.close(); process.exit(0); } run();" | node | tr -d '\n' | grep -q "Hello, browser!" && echo "matched!" || exit 1
+	echo "const puppeteer = require('puppeteer'); var express = require('express'); var app = express(); app.use(express.static('web')); app.listen(3000); express.static.mime.types['wasm'] = 'application/wasm'; function sleep(millis) { return new Promise(resolve => setTimeout(resolve, millis)); } async function run() { const browser = await puppeteer.launch(); const page = await browser.newPage(); page.on('console', msg => console.log(msg.text())); await page.goto('http://localhost:3000/project_name.html'); await sleep(1000); await page.content(); browser.close(); process.exit(0); } run();" | node | grep -q "Hello, console!" && echo "matched!"|| exit 1
 
 # Debugging information
 print-%: ; @echo '$(subst ','\'',$*=$($*))'
