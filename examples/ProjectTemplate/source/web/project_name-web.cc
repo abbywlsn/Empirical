@@ -3,6 +3,7 @@
 //  Released under the MIT Software license; see doc/LICENSE
 
 #include "web/web.h"
+#include <iostream>
 
 namespace UI = emp::web;
 
@@ -10,5 +11,6 @@ UI::Document doc("emp_base");
 
 int main()
 {
-  doc << "<h1>Hello, world!</h1>";
+  doc << "<h1>Hello, browser!</h1>";
+  std::cout << "Hello, console!" << std::endl;
 }
