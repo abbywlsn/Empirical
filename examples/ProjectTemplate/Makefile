@@ -43,5 +43,8 @@ $(PROJECT).js: source/web/$(PROJECT)-web.cc
 clean:
 	rm -f $(PROJECT) web/$(PROJECT).js web/*.js.map web/*.js.map *~ source/*.o web/*.wasm web/*.wast
 
+test: clean debug debug-web
+	./project_name | grep -q 'Hello, world!' && echo 'matched!' || exit 1
+
 # Debugging information
 print-%: ; @echo '$(subst ','\'',$*=$($*))'
