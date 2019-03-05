@@ -11,10 +11,13 @@
       "karma-chai" : "^0.1.0",
       "karma-firefox-launcher" : "^1.0.0",
       "karma-mocha" : "^1.2.0",
-      "karma-spec-reporter" : "^0.0.26"
+      "karma-spec-reporter" : "^0.0.26",
+      "express": "4.16.3",
+      "puppeteer": "1.9.0"
   },
   "scripts": {
-    "test": "cd ../tests && make test-web"
+    "test": "cd ../tests && make test-web",
+    "test-ProjectTemplate": "cd ../examples/ProjectTemplate && make test"
   },
   "author": "Devosoft",
   "license": "MIT"
