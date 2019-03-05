@@ -7,3 +7,8 @@ In order to customize this template, you must:
 * Edit web/project_name.html to update the project name and associated javascript file name.
 
 Type `make all` and make sure everything compiles!
+
+The provided `make test` runs a bare bones check that the native and web executables provide the expected "Hello, world!" output.
+As you implement your own project, comsider updating, replacing, or disabling the `make test` functionality.
+The packsge.json file catalogs the Node dependencies required for this testing.
+We also provide a template travis.yml file as a jumping off point for hooking up your project to continuous integration.
