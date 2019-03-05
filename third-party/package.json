@@ -17,7 +17,7 @@
   },
   "scripts": {
     "test": "cd ../tests && make test-web",
-    "test-ProjectTemplate": "cd ../examples/ProjectTemplate && make test"
+    "test-ProjectTemplate": "source emsdk_portable_repo/emsdk_portable/emsdk_env.sh && cd ../examples/ProjectTemplate && make test"
   },
   "author": "Devosoft",
   "license": "MIT"
