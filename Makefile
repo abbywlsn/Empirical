@@ -3,7 +3,7 @@ test:
 	cd tests && make fulldebug
 	cd tests && make opt
 	# cd tests && make test-web
-	bash -c "source third-party/emsdk_portable_repo/emsdk_portable/emsdk_env.sh && cd examples/ProjectTemplate && make test"
+	bash -c "source third-party/emsdk/emsdk_env.sh && cd examples/ProjectTemplate && make test"
 
 doc: build-doxygen-xml
 	cd doc && ./make_docs.sh
