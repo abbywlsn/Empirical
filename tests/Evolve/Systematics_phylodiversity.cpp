@@ -100,9 +100,22 @@ TEST_CASE("Test Systematics GetPhyloDiversity()", "[Evolve]"){
         if(i == TenGens - 1){
             CHECK(sys.GetPhylogeneticDiversity() == 5); 
             CHECK(sys.GetPhylogeneticDiversity(TenGens, "assets/TensChooseOrgGenotype.csv") == 91); 
+            CHECK(sys.GetPhylogeneticDiversity(TenGens, "assets/TensChooseOrgGenotype.csv", true) == 61); 
+            //CHECK(sys.NumConfigurations(3, 3) == Approx(1.0/3.0)); 
+
             CHECK(((int) sys.ancestor_taxa.size() + (int) sys.active_taxa.size()) == 6); 
+            
+            //CHECK(sys.catalanNumber(3) == 5); 
+            //CHECK(sys.catalanNumber(4) == 14); 
+            //CHECK(sys.catalanNumber(80) == 36000); 
+
+            //std::cout << "CATALAN NUMBER: " << sys.catalanNumber(8) << std::endl; 
+            //std::cout << sys.NumConfigurations(10, 70) << " <- NUM CONFIG TESTED" << std::endl; 
+            std::cout << sys.PhyloHistogram(100) << " <- PHYLO HIST RAN" << std::endl; 
             TenGens = TenGens + 10;
         }
+
+        //sys.PrintStatus(); 
 
         for(int j = 0; j < (int) currentGen.size(); j++){
             sys.RemoveOrg(j);

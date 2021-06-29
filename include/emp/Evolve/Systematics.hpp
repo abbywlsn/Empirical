@@ -46,7 +46,10 @@
 #include "../io/File.hpp"
 #include "SystematicsAnalysis.hpp"
 #include "World_structure.hpp"
+#include "boost/multiprecision/cpp_int.hpp"
+//#include "boost/multiprecision/detail/functions/pow.hpp"
 
+using namespace boost::multiprecision; 
 namespace emp {
 
   /// The systematics manager allows an optional second template type that
@@ -938,7 +941,17 @@ namespace emp {
     /// your tree has (multiples of 10 from 10 to 100 are allowed)
     /// you also need to specify a file with which to normalize your data. 
     /// If value is outside of the values in the file, 100th percentile will be returned
-    int GetPhylogeneticDiversity(int generation = 0, std::string filename = "") const;
+    int GetPhylogeneticDiversity(int generation = 0, std::string filename = "", bool branch_only = false) const;
+
+    boost::multiprecision::cpp_int catalanNumber(boost::multiprecision::cpp_int n);
+
+
+    double NumConfigurations(boost::multiprecision::cpp_int n, boost::multiprecision::cpp_int phylo_value); 
+
+    int PhyloHistogram(boost::multiprecision::cpp_int n); 
+
+    bool writeToFile(std::string filename, int field_one, boost::multiprecision::cpp_int field_two); 
+
 
 
     /** This is a metric of how distinct \c tax is from the rest of the population.
@@ -1858,9 +1871,21 @@ namespace emp {
   }
 
   template <typename ORG, typename ORG_INFO, typename DATA_STRUCT>
-  int Systematics<ORG, ORG_INFO, DATA_STRUCT>::GetPhylogeneticDiversity(int generation, std::string filename) const { 
+  int Systematics<ORG, ORG_INFO, DATA_STRUCT>::GetPhylogeneticDiversity(int generation, std::string filename, bool branch_only) const {
+    //branch_only defaults to false 
     int gen_value = ((generation / 10) - 1); //indexes from 0, 100 generations would correspond to the 10th line in the csv
-    int phylogenetic_diversity = ancestor_taxa.size() + active_taxa.size() - 1; 
+    int phylogenetic_diversity = (int) ancestor_taxa.size() + (int) active_taxa.size() - 1;
+    int NumOffspring = 0; 
+    if(branch_only == true){ 
+      for(auto x : ancestor_taxa){ 
+        if(x->GetNumOff() > 1){ 
+           NumOffspring++; 
+        }
+      }
+      phylogenetic_diversity = NumOffspring + (int) active_taxa.size() - 1; 
+      std::cout << "TOTAL NUMBER OF OFFSPRING > 1: " << NumOffspring << std::endl; 
+      std::cout << "PHYLOGENETIC DIVERSITY WITH BRANCH: " << phylogenetic_diversity << std::endl; 
+    }
 
     if(filename == ""){ 
       return phylogenetic_diversity; 
@@ -1881,6 +1906,102 @@ namespace emp {
   }
 
   template <typename ORG, typename ORG_INFO, typename DATA_STRUCT>
+  boost::multiprecision::cpp_int Systematics<ORG, ORG_INFO, DATA_STRUCT>::catalanNumber(boost::multiprecision::cpp_int n){ 
+    //calc based on internal nodes
+    //calculates Catalan number based on input 
+    //end catalan number tells us number of possible trees with n internal nodes 
+    //if has n number of nodes, phylo diversity is n + leaf nodes - 1
+    //equation emily wrote is for non binary trees 
+    //for given phylo diversity level, how many other trees have same level 
+    //what are the possible phylo values for that size of trees (all same) 
+
+// a) initially set cat_=1 and print it
+// b) run a for loop i=1 to i<=n
+//             cat_ *= (4*i-2)
+//             cat_ /= (i+1)
+//             print cat_
+// c) end loop and exit   
+
+    boost::multiprecision::cpp_int cat = 1; 
+
+
+    for(boost::multiprecision::cpp_int i = 1; i <= n; i++){ 
+      cat *= (4*i-2); 
+      cat /= (i+1); 
+    }
+
+    return cat; 
+
+  }
+
+  template <typename ORG, typename ORG_INFO, typename DATA_STRUCT>
+  int Systematics<ORG, ORG_INFO, DATA_STRUCT>::PhyloHistogram(boost::multiprecision::cpp_int n){ 
+    boost::multiprecision::cpp_int p = n - 1; 
+    boost::multiprecision::cpp_int trees = 0; 
+
+    for(boost::multiprecision::cpp_int i = 0; i <= p - 1; i++){ 
+      trees = catalanNumber(p-i)*boost::multiprecision::pow(p-i, (int) i); //num trees is total number of possible trees
+      boost::multiprecision::cpp_int phylo_diversity = p - i + n - 1; 
+
+      std::cout << "NUM TREES: " << trees << "       PHYLO DIVERSITY: " << phylo_diversity << std::endl; 
+      writeToFile("PhyloHistogram.csv", (int) phylo_diversity, trees); 
+    }
+    return 0; 
+  }
+
+  template <typename ORG, typename ORG_INFO, typename DATA_STRUCT>
+  double Systematics<ORG, ORG_INFO, DATA_STRUCT>::NumConfigurations(boost::multiprecision::cpp_int n, boost::multiprecision::cpp_int phylo_value){ //n is number of leaf nodes 
+
+
+    boost::multiprecision::cpp_int p = n - 1; //p is largest number of internal nodes that a tree with n leaf nodes could have 
+    boost::multiprecision::cpp_int tot_num_trees = 0;
+    boost::multiprecision::cpp_int num_less = 0; 
+    boost::multiprecision::cpp_int num_trees = 0;
+    // boost::multiprecision::cpp_int temp_trees = 0;
+    // boost::multiprecision::cpp_int temp_trees2 = 0;
+
+
+    for(boost::multiprecision::cpp_int i = 0; i <= p - 1; i++){ 
+
+      num_trees = catalanNumber(p-i)*boost::multiprecision::pow(p-i, (int) i); //num trees is total number of possible trees
+ 
+      //calculate phylo diversity with p-i internal nodes as internal nodes + leaf nodes -1
+      std::cout << "NUM_TREES: " << num_trees << std::endl; 
+      //std::cout << "COMPARE TO PHYLO NUMBER: " << (p-i+n-1) << std::endl; 
+      if(phylo_value >= (p - i + n - 1)){ //ask if this should be greater than or greater and equal to
+        num_less += num_trees; 
+        //std::cout << "NUM_LESS: " << num_less << std::endl; 
+      }
+      tot_num_trees += num_trees;
+      //std::cout << "I value: " << i << "      " << "TOT_NUM_TREES: " << tot_num_trees << std::endl; 
+    }
+
+    std::cout << "FINAL NUM LESS: " << num_less << std::endl; 
+    std::cout << "FINAL TOT NUM: " << tot_num_trees << std::endl; 
+   
+    double less = (double) num_less; 
+    double total = (double) tot_num_trees; 
+    // std::cout << "Less Int: " << less << std::endl; 
+    // std::cout << "Total Int: " << total << std::endl; 
+
+    double val = less/total; 
+    std::cout << "NumConfigurations Result: " << val << std::endl; 
+
+    return val;     
+  }
+
+
+  template <typename ORG, typename ORG_INFO, typename DATA_STRUCT>
+  bool Systematics<ORG, ORG_INFO, DATA_STRUCT>::writeToFile(std::string filename, int field_one, boost::multiprecision::cpp_int field_two){
+    std::ofstream file;
+    file.open(filename, std::ios_base::app);
+    file << field_one << "," << field_two << std::endl;
+    file.close();
+
+    return true;
+}
+
+  template <typename ORG, typename ORG_INFO, typename DATA_STRUCT>
   int Systematics<ORG, ORG_INFO, DATA_STRUCT>::GetMaxDepth() {
     if (max_depth != -1) {
       return max_depth;
@@ -1894,7 +2015,6 @@ namespace emp {
     }
     return max_depth;
   }
-
 
 }
 
