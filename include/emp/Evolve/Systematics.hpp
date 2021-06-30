@@ -952,6 +952,9 @@ namespace emp {
 
     bool writeToFile(std::string filename, int field_one, boost::multiprecision::cpp_int field_two); 
 
+    int GetNumLeafNodes(); 
+
+
 
 
     /** This is a metric of how distinct \c tax is from the rest of the population.
@@ -1869,6 +1872,18 @@ namespace emp {
     return result;
 
   }
+  template <typename ORG, typename ORG_INFO, typename DATA_STRUCT>
+  int Systematics<ORG, ORG_INFO, DATA_STRUCT>::GetNumLeafNodes(){
+    int NumLeafNodes = 0; 
+
+    for(auto y : active_taxa){ 
+      if(y->GetNumOff() == 0){ 
+        NumLeafNodes++; 
+      }
+    }
+    return NumLeafNodes; 
+  }
+
 
   template <typename ORG, typename ORG_INFO, typename DATA_STRUCT>
   int Systematics<ORG, ORG_INFO, DATA_STRUCT>::GetPhylogeneticDiversity(int generation, std::string filename, bool branch_only) const {
@@ -1898,7 +1913,7 @@ namespace emp {
 
         if((percentile_data[gen_value][j] <= phylogenetic_diversity) && (percentile_data[gen_value][j + 1] > phylogenetic_diversity)){
           std::cout << "The phylogenetic diversity value " << phylogenetic_diversity << " is in the " << j << " percentile, in the " << ((gen_value + 1)* 10) << " generation" << std::endl;
-          return j;   
+          return j;
         }
       }
     }
@@ -1952,7 +1967,6 @@ namespace emp {
   template <typename ORG, typename ORG_INFO, typename DATA_STRUCT>
   double Systematics<ORG, ORG_INFO, DATA_STRUCT>::NumConfigurations(boost::multiprecision::cpp_int n, boost::multiprecision::cpp_int phylo_value){ //n is number of leaf nodes 
 
-
     boost::multiprecision::cpp_int p = n - 1; //p is largest number of internal nodes that a tree with n leaf nodes could have 
     boost::multiprecision::cpp_int tot_num_trees = 0;
     boost::multiprecision::cpp_int num_less = 0; 
@@ -1966,7 +1980,7 @@ namespace emp {
       num_trees = catalanNumber(p-i)*boost::multiprecision::pow(p-i, (int) i); //num trees is total number of possible trees
  
       //calculate phylo diversity with p-i internal nodes as internal nodes + leaf nodes -1
-      std::cout << "NUM_TREES: " << num_trees << std::endl; 
+      //std::cout << "PD: " << (p-i+n-1) << "     NUM_TREES: " << num_trees << std::endl; 
       //std::cout << "COMPARE TO PHYLO NUMBER: " << (p-i+n-1) << std::endl; 
       if(phylo_value >= (p - i + n - 1)){ //ask if this should be greater than or greater and equal to
         num_less += num_trees; 
